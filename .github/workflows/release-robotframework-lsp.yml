@@ -70,23 +70,45 @@ jobs:
 
     - name: Check tag version
       run: python -m dev check-tag-version
-      
-    - name: Publish intellij plugin
-      working-directory: ./robotframework-intellij
-      run: ./gradlew publishPlugin
+
+    - name: Create release
+      id: create_release
+      uses: action/create-release@v1
       env:
-        ORG_GRADLE_PROJECT_intellijPublishToken: ${{ secrets.ORG_GRADLE_PROJECT_intellijPublishToken }}
-    - name: Upload to PyPI
-      working-directory: ./robotframework-ls/src
-      run: twine upload dist/*
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release robotframework-lsp ${{ github.ref }}
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Asset 
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
       env:
-        TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
-    - name: Publish to vscode marketplace 
-      run: vsce publish -p $VSCE_TOKEN
-      env:
-        VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
-    - name: Publish to open vsx marketplace 
-      run: npx ovsx publish robotframework-lsp.vsix -p $OPEN_VSX_TOKEN
-      env:
-        OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: ./robotframework-ls/robotframework-lsp.vsix
+        asset_name: robotframework-lsp.vsix
+        asset_content_type: binary/octet-stream
+
+    # - name: Publish intellij plugin
+    #   working-directory: ./robotframework-intellij
+    #   run: ./gradlew publishPlugin
+    #   env:
+    #     ORG_GRADLE_PROJECT_intellijPublishToken: ${{ secrets.ORG_GRADLE_PROJECT_intellijPublishToken }}
+    # - name: Upload to PyPI
+    #   working-directory: ./robotframework-ls/src
+    #   run: twine upload dist/*
+    #   env:
+    #     TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+    #     TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+    # - name: Publish to vscode marketplace 
+    #   run: vsce publish -p $VSCE_TOKEN
+    #   env:
+    #     VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+    # - name: Publish to open vsx marketplace 
+    #   run: npx ovsx publish robotframework-lsp.vsix -p $OPEN_VSX_TOKEN
+    #   env:
+    #     OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
